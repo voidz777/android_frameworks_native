@@ -3551,7 +3551,7 @@ void SurfaceFlinger::updateInputFlinger() {
         setInputWindowsFinished();
     }
 
-    executeInputWindowCommands();
+    mInputWindowCommands.clear();
 }
 
 void SurfaceFlinger::updateInputWindowInfo() {
@@ -3573,19 +3573,6 @@ void SurfaceFlinger::updateInputWindowInfo() {
 void SurfaceFlinger::commitInputWindowCommands() {
     mInputWindowCommands = mPendingInputWindowCommands;
     mPendingInputWindowCommands.clear();
-}
-
-void SurfaceFlinger::executeInputWindowCommands() {
-    for (const auto& transferTouchFocusCommand : mInputWindowCommands.transferTouchFocusCommands) {
-        if (transferTouchFocusCommand.fromToken != nullptr &&
-            transferTouchFocusCommand.toToken != nullptr &&
-            transferTouchFocusCommand.fromToken != transferTouchFocusCommand.toToken) {
-            mInputFlinger->transferTouchFocus(transferTouchFocusCommand.fromToken,
-                                              transferTouchFocusCommand.toToken);
-        }
-    }
-
-    mInputWindowCommands.clear();
 }
 
 void SurfaceFlinger::updateCursorAsync()
@@ -7211,7 +7198,7 @@ status_t SurfaceFlinger::setAllowedDisplayConfigs(const sp<IBinder>& displayToke
         return NO_ERROR;
     }
 
-    postMessageSync(new LambdaMessage([&]() NO_THREAD_SAFETY_ANALYSIS {
+    postMessageSync(new LambdaMessage([&]() {
         const auto display = getDisplayDeviceLocked(displayToken);
         if (!display) {
             ALOGE("Attempt to set allowed display configs for invalid display token %p",
@@ -7219,6 +7206,7 @@ status_t SurfaceFlinger::setAllowedDisplayConfigs(const sp<IBinder>& displayToke
         } else if (display->isVirtual()) {
             ALOGW("Attempt to set allowed display configs for virtual display");
         } else {
+            Mutex::Autolock lock(mStateLock);
             setAllowedDisplayConfigsInternal(display, allowedConfigs);
         }
     }));
