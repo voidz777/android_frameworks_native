@@ -193,13 +193,6 @@ EventThread::EventThread(VSyncSource* src, std::unique_ptr<VSyncSource> uniqueSr
     }
 
     set_sched_policy(tid, SP_FOREGROUND);
-    mDolphinHandle = dlopen("libdolphin.so", RTLD_NOW);
-    if (mDolphinHandle) {
-        mDolphinCheck = (bool (*) (const char*))dlsym(mDolphinHandle, "dolphinCheck");
-        if (!mDolphinCheck) dlclose(mDolphinHandle);
-    }
-
-    android_set_rt_ioprio(tid, 1);
 }
 
 EventThread::~EventThread() {
